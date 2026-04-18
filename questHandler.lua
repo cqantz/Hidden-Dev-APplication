@@ -4,6 +4,8 @@ local Quests = { questMetas = {} }
 
 Quests.__index = Quests
 
+-- set metatable
+
 local questInformation = require(script.Parent.Information)
 
 local knitServer = require(game.ServerStorage["Server Libary"].Systems.Core.knitServer)
@@ -11,6 +13,8 @@ local generalService = knitServer.GeneralService
 local abilityHandler = require(game.ServerStorage["Server Libary"].Systems.Core.Abilities.Handler)
 
 local questAttributes = { "dungeonAbilities" }
+
+--create a new quest
 
 function Quests.new(questModel)
 	local questObject = setmetatable({}, Quests)
@@ -66,12 +70,16 @@ function Quests.new(questModel)
 	questModel.Humanoid:LoadAnimation(idleAnimationObject):Play()
 end
 
+--start the dialouge for quests, (talking to npcs)
+
 function Quests:initiateDialouge(player)
 	self.activePeople[player] = true
 	generalService.Client.GeneralContact:Fire(player, { arg1 = "questClientDialouge", arg2 = self })
 	player.Character:SetAttribute("inQuestDialouge", true)
 	abilityHandler.stopMovement(player.Character)
 end
+
+-- stop the dialouge for quests
 
 function Quests:breakDialouge(player)
 	local dataSetup = require(ServerStorage["Server Libary"].Systems.Core.Data.dataSetup)
@@ -89,6 +97,8 @@ function Quests:breakDialouge(player)
 	abilityHandler.startMovement(player.Character)
 end
 
+--start quests
+
 function Quests:acceptQuest(player)
 	generalService.Client.GeneralContact:Fire(player, { arg1 = "questClientDialougeBreak", arg2 = self, arg3 = true })
 	player.Character:SetAttribute("inQuestDialouge", false)
@@ -96,11 +106,15 @@ function Quests:acceptQuest(player)
 	self:startQuest(player)
 end
 
+--this stops the quest dialouge but doesnt start quests since its a cutscene
+
 function Quests:breakDialougeCutscene(player)
 	generalService.Client.GeneralContact:Fire(player, { arg1 = "questClientDialougeBreak", arg2 = self, arg3 = true })
 	player.Character:SetAttribute("inQuestDialouge", false)
 	abilityHandler.startMovement(player.Character)
 end
+
+--this checks the current objective of quests
 
 function Quests:checkCurrentObjective(player)
 	local _currentObjective = nil
@@ -115,8 +129,11 @@ function Quests:checkCurrentObjective(player)
 		local objectiveObject = self.dictionaryOfInformation.Objectives[_currentObjective]
 		return _currentObjective, objectiveObject
 	end
+	--if no next objective is found, it will return the reward to reward players
 	return "Reward"
 end
+
+--this is a time limit for quests
 
 function Quests:delayOfQuest(player, objectiveObject)
 	if objectiveObject.quitTime then
@@ -131,6 +148,8 @@ function Quests:delayOfQuest(player, objectiveObject)
 		end)
 	end
 end
+
+--this starts the quests by finding the objective and running functions based on data
 
 function Quests:startQuest(player)
 	generalService.Client.GeneralContact:Fire(player, { arg1 = "disableQuestProximitys", arg2 = self.Prompt })
@@ -251,6 +270,8 @@ function Quests:startQuest(player)
 	end
 end
 
+--this is for rewarding players who complete quests
+
 function Quests:rewardPlayer(player)
 	self:finishQuest(player)
 	player.PlayerGui.Interface.Extras.QuestButton.Frame.Visible = false
@@ -259,6 +280,8 @@ function Quests:rewardPlayer(player)
 	local data = dataSetup.GetData(player).Slots[player:GetAttribute("Slot")]
 	generalService.Client.GeneralContact:Fire(player, { arg1 = "enableQuestProximitys", arg2 = data })
 end
+
+--this spawns npcs
 
 function Quests:spawnNpc(player)
 	if not self.activePeople[player] then
@@ -357,6 +380,8 @@ function Quests:spawnNpc(player)
 		end
 	end
 end
+
+--this spawns an object in a area, so for example, I have a crown that players need to find within a certain area
 
 function Quests:spawnObjectInArea(player)
 	local keyOfObjective, objectiveObject = self:checkCurrentObjective(player)
@@ -476,6 +501,8 @@ function Quests:spawnObjectInArea(player)
 	end
 end
 
+--this finishes quests
+
 function Quests:finishQuest(player)
 	local dataSetup = require(ServerStorage["Server Libary"].Systems.Core.Data.dataSetup)
 	local rewardsTable = self.dictionaryOfInformation.Reward
@@ -492,6 +519,8 @@ function Quests:finishQuest(player)
 	end
 	playerData.Slots[player:GetAttribute("Slot")]["Quest Timestamps"][self.Name] = DateTime.now().UnixTimestamp
 end
+
+--cleans up all player based quest data for performance
 
 function Quests:Maid(player, cancel)
 	local dataSetup = require(ServerStorage["Server Libary"].Systems.Core.Data.dataSetup)
@@ -542,6 +571,8 @@ function Quests:Maid(player, cancel)
 		player.PlayerGui.Interface.Extras.QuestButton.Frame.Visible = false
 	end
 end
+
+--this returns a current quest object thats attached to a player
 
 function Quests.grabQuest(player)
 	for _, meta in pairs(Quests.questMetas) do
